@@ -248,16 +248,18 @@ def downloader(link,exists_action, progress=gr.Progress()):
     print("All videos downloaded successfully!")
     return "All videos downloaded successfully!"
 
-def save_app_settings(spotify_client_id,spotify_client_secret):
+def save_app_settings(spotify_client_id, spotify_client_secret):
     try:
-        env_str="SPOTIPY_CLIENT_ID="+spotify_client_id+"\nSPOTIPY_CLIENT_SECRET="+spotify_client_secret
-        with open(".env", "r+") as f:
+        env_str = "SPOTIPY_CLIENT_ID=" + spotify_client_id + "\nSPOTIPY_CLIENT_SECRET=" + spotify_client_secret
+        with open(".env", "a+") as f:
+            f.seek(0)  # Move the cursor to the beginning of the file
+            f.truncate()  # Clear the file content
             f.write(env_str)
     except Exception as e:
-        print (e)
+        print(e)
         return "app settings update failed"
     return "app settings updated"
-
+    
 def ui():
     with gr.Blocks() as gui:
         gr.Markdown ("""
