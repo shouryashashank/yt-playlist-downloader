@@ -112,7 +112,7 @@ def set_metadata(metadata, file_path):
         )
     audio.save(v2_version=3)
 
-def search_spotify(search_term : str)->str:
+def search_spotify(search_term : str, sp)->str:
     """search for the track on spotify"""
     search_results = sp.search(search_term, type="track", limit=1)
     if search_results["tracks"]["total"] == 0:
@@ -120,7 +120,7 @@ def search_spotify(search_term : str)->str:
     track = search_results["tracks"]["items"][0]
     return track["external_urls"]["spotify"]
 
-def get_track_info_spotify(track_url):
+def get_track_info_spotify(track_url,sp):
     res = requests.get(track_url)
     if res.status_code != 200:
         # retry 3 times
@@ -163,7 +163,14 @@ def get_track_info_youtube(video):
 
 def greet(name, intensity):
     return "Hello, " + name + "!" * int(intensity)
+
+def ensure_folder_path_ends_with_slash(folder_path):
+    if not folder_path.endswith(os.sep):
+        folder_path += os.sep
+    return folder_path
+
 def folder_select():
+    global music_folder_path
     filename = filedialog.askdirectory()
     root = Tk()
     root.attributes("-topmost", True)
@@ -171,17 +178,17 @@ def folder_select():
     if filename:
         if os.path.isdir(filename):
             root.destroy()
-            music_folder_path = str(filename)
-            return str(filename)
+            music_folder_path = ensure_folder_path_ends_with_slash(str(filename))
+            return music_folder_path
         else:
             root.destroy()
-            music_folder_path = str(filename)
-            return str(filename)
+            music_folder_path = ensure_folder_path_ends_with_slash(str(filename))
+            return music_folder_path
     else:
         filename = "Folder not seleceted"
         root.destroy()
-        music_folder_path = str(filename)
-        return str(filename)
+        music_folder_path = ensure_folder_path_ends_with_slash(str(filename))
+        return music_folder_path
     
 
 def downloader(link,exists_action, progress=gr.Progress()):
@@ -192,6 +199,7 @@ def downloader(link,exists_action, progress=gr.Progress()):
     }
     global file_exists_action 
     file_exists_action = custom_labels[exists_action]
+    use_spotify_for_metadata = True
     try:
         load_dotenv()
         SPOTIPY_CLIENT_ID = os.getenv('SPOTIPY_CLIENT_ID')
@@ -201,6 +209,7 @@ def downloader(link,exists_action, progress=gr.Progress()):
         )
         sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
     except Exception as e:
+        use_spotify_for_metadata = False
         print(f"Failed to connect to Spotify API: {e}")
         print("Continuing without Spotify API, some song metadata will not be added")
     # link = input("Enter YouTube Playlist URL: ✨")
@@ -217,17 +226,21 @@ def downloader(link,exists_action, progress=gr.Progress()):
             print("Downloading: "+video.title)
             audio = download_yt(video,video.title)
             if audio:
-
+                if(use_spotify_for_metadata):
                     try:
-                        track_url = search_spotify(f"{video.author} {video.title}")
+                        track_url = search_spotify(f"{video.author} {video.title}",sp)
                     except Exception as e:
+                        print(e)
                         track_url = None
                     if not track_url:
                         track_info = get_track_info_youtube(video)
                     else:
-                        track_info = get_track_info_spotify(track_url)
-                    set_metadata(track_info, audio)
-                    os.replace(audio, f"{music_folder_path}{os.path.basename(audio)}")
+                        track_info = get_track_info_spotify(track_url,sp)
+                else:
+                    track_info = get_track_info_youtube(video)
+
+                set_metadata(track_info, audio)
+                os.replace(audio, f"{music_folder_path}{os.path.basename(audio)}")
         except Exception as e:
             print(f"Failed to download {video.title} due to: {e}")
             continue
