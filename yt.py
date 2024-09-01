@@ -9,7 +9,7 @@ from mutagen.id3 import APIC, ID3
 import urllib.request
 from tqdm import tqdm
 import gradio as gr
-from tkinter import Tk, filedialog
+from tkinter import filedialog, Tk
 from dotenv import load_dotenv
 
 
@@ -171,10 +171,10 @@ def ensure_folder_path_ends_with_slash(folder_path):
 
 def folder_select():
     global music_folder_path
-    filename = filedialog.askdirectory()
     root = Tk()
     root.attributes("-topmost", True)
     root.withdraw()
+    filename = filedialog.askdirectory()
     if filename:
         if os.path.isdir(filename):
             root.destroy()
@@ -189,7 +189,7 @@ def folder_select():
         root.destroy()
         music_folder_path = ensure_folder_path_ends_with_slash(str(filename))
         return music_folder_path
-    
+ 
 
 def downloader(link,exists_action, progress=gr.Progress()):
     custom_labels = {
@@ -292,7 +292,7 @@ def ui():
             with gr.Row():
                 download_btn = gr.Button("Download playlist")
             with gr.Row():
-                progress_bar = gr.Textbox()
+                progress_bar = gr.Textbox(label="Progress Bar")
                 download_btn.click(downloader, inputs=[yt_playlist,file_exists_action], outputs=[progress_bar])
             gr.Markdown ("""
                         <p style="text-align: center; font-size: small;">Buy <a href="https://www.youtube.com/premium">YouTube Premium</a> to get similar features</a> </p>
